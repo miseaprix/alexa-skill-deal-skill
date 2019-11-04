@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dealabs import Dealabs
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import SimpleCard
@@ -30,9 +31,9 @@ class SSMLStripper(HTMLParser):
 
 ################################################
 
-skill_name = "Readable skill name for the Alexa skill"
+skill_name = "Hot deals"
 help_text = ("Vous pouvez demander : "
-             "...TEXTE A MODIFIER...")
+             "Donne moi les deals du jour")
 
 sb = SkillBuilder()
 
@@ -40,7 +41,7 @@ sb = SkillBuilder()
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
 def launch_request_handler(handler_input):
     # Handler for Skill Launch
-    speech = "Bienvenue dans la skill Readable skill name for the Alexa skill."
+    speech = "Bienvenue dans le skill Hot deals."
 
     handler_input.response_builder.speak(
         speech + " " + help_text).ask(help_text)
@@ -72,14 +73,28 @@ def session_ended_request_handler(handler_input):
 
 
 @sb.request_handler(can_handle_func=is_intent_name(
-    "...INTENT_NAME A MODIFIER..."))
-def INTENT_NAME_A_MODIFIER(handler_input):
+    "demande_deals_les_plus_hot"))
+def demande_deals_les_plus_hot(handler_input):
     slots = handler_input.request_envelope.request.intent.slots
 
-    if "NOM DU SLOT A MODIFIER" in slots:
-        var = slots["NOM DU SLOT A MODIFIER"].value
+    if "periode_slot" in slots:
+        var = slots["AMAZON.DURATION"].value
 
-    speech = "TEXTE A MODIFIER {}".format(var)
+    params = {
+    	"days": "1", # can be 1, 7 or 30 days
+    	"page": "1", # page number
+    	"limit":"25" # article per page
+    }
+
+    list_p = dealabs.get_deals_hot(params=params)
+    if len(liste_p) < 1:
+	 speech = "Aucun deal de trouver pour la periode souhaitee {}.".format(var)
+
+    for p in list_p:
+	if p is None:
+		speech = "Aucun deal de trouver {}.".format(var)
+	else:
+		speech += "Voici les deals du jour {}".format(p)
 
     handler_input.response_builder.speak(speech)
     return handler_input.response_builder.response
